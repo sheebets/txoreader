@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import numpy as np
 
-st.title('Simple - No Parsing TXOdds Data Review')
+st.title('Betting Data Analyzer')
 st.text('Filter and visualize betting data with RECDATE vs PRICES scatter plot')
 
 # File uploader
@@ -111,7 +111,7 @@ if upload_file:
         sample_interval = st.sidebar.selectbox(
             'Sample data every:',
             ['No sampling', '30 minutes', '1 hour', '2 hours', '4 hours', '6 hours', '12 hours'],
-            index=3  # Default to 2 hours
+            index=0  # Default to No sampling
         )
         
         # Apply sampling if selected
