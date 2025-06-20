@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import numpy as np
 
-st.title('Betting Data Analyzer')
+st.title('Simple TxOdds Viewer - No Parsing')
 st.text('Filter and visualize betting data with RECDATE vs PRICES scatter plot')
 
 # File uploader
