@@ -18,6 +18,30 @@ if upload_file:
     st.write(f"Total records: {len(df)}")
     st.write("Column names:", list(df.columns))
     
+    # Show first values of key columns as description
+    st.subheader('Data Sample Information')
+    col1, col2, col3, col4, col5 = st.columns(5)
+    
+    with col1:
+        st.write("**SPORT:**")
+        st.write(f"{df['SPORT'].iloc[0] if not df['SPORT'].empty else 'N/A'}")
+    
+    with col2:
+        st.write("**FIXTUREID:**")
+        st.write(f"{df['FIXTUREID'].iloc[0] if not df['FIXTUREID'].empty else 'N/A'}")
+    
+    with col3:
+        st.write("**MATCH_DATE:**")
+        st.write(f"{df['MATCH_DATE'].iloc[0] if not df['MATCH_DATE'].empty else 'N/A'}")
+    
+    with col4:
+        st.write("**PARTICIPANT1:**")
+        st.write(f"{df['PARTICIPANT1'].iloc[0] if not df['PARTICIPANT1'].empty else 'N/A'}")
+    
+    with col5:
+        st.write("**PARTICIPANT2:**")
+        st.write(f"{df['PARTICIPANT2'].iloc[0] if not df['PARTICIPANT2'].empty else 'N/A'}")
+    
     # Show sample data
     with st.expander("View Sample Data"):
         st.write(df.head())
