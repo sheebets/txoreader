@@ -22,8 +22,40 @@ if upload_file:
     with st.expander("View Sample Data"):
         st.write(df.head())
     
-    # Create filters in sidebar
+    # Create filters in sidebar (always shown)
     st.sidebar.header('Filters')
+    
+    # Date filter for RECDATE
+    st.sidebar.subheader('Date Range')
+    
+    # Convert RECDATE to datetime for filtering
+    try:
+        df['RECDATE_temp'] = pd.to_datetime(df['RECDATE'])
+        min_date = df['RECDATE_temp'].min().date()
+        max_date = df['RECDATE_temp'].max().date()
+        
+        # Date range picker
+        date_range = st.sidebar.date_input(
+            'Select Date Range:',
+            value=(min_date, max_date),
+            min_value=min_date,
+            max_value=max_date
+        )
+        
+        # Handle single date selection
+        if isinstance(date_range, tuple) and len(date_range) == 2:
+            start_date, end_date = date_range
+        else:
+            start_date = end_date = date_range if hasattr(date_range, 'year') else min_date
+            
+        st.sidebar.write(f"Selected: {start_date} to {end_date}")
+        
+    except Exception as e:
+        st.sidebar.error(f"Could not parse dates: {str(e)}")
+        date_range = None
+        df['RECDATE_temp'] = df['RECDATE']
+    
+    st.sidebar.subheader('Other Filters')
     
     # SOT filter
     sot_options = ['All'] + sorted(df['SOT'].dropna().unique().tolist())
@@ -77,8 +109,22 @@ if upload_file:
                                                  available_bookmakers, 
                                                  default=available_bookmakers[:5] if len(available_bookmakers) > 5 else available_bookmakers)
     
-    # Apply all filters to get final filtered data
+    # Apply filters
     filtered_df = df.copy()
+    
+    # Apply date filter
+    if date_range and hasattr(start_date, 'year'):
+        try:
+            # Convert start and end dates to datetime for comparison
+            start_datetime = pd.to_datetime(start_date)
+            end_datetime = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)  # Include full end day
+            
+            filtered_df = filtered_df[
+                (filtered_df['RECDATE_temp'] >= start_datetime) & 
+                (filtered_df['RECDATE_temp'] <= end_datetime)
+            ]
+        except Exception as e:
+            st.warning(f"Date filtering error: {str(e)}")
     
     if selected_sot != 'All':
         filtered_df = filtered_df[filtered_df['SOT'] == selected_sot]
@@ -105,49 +151,6 @@ if upload_file:
         except:
             st.warning("Could not parse all RECDATE values. Using original values.")
             plot_df['RECDATE_parsed'] = plot_df['RECDATE']
-        
-        # Data sampling options
-        st.sidebar.subheader('Data Sampling')
-        sample_interval = st.sidebar.selectbox(
-            'Sample data every:',
-            ['No sampling', '30 minutes', '1 hour', '2 hours', '4 hours', '6 hours', '12 hours'],
-            index=0  # Default to No sampling
-        )
-        
-        # Apply sampling if selected
-        if sample_interval != 'No sampling':
-            interval_map = {
-                '30 minutes': 30,
-                '1 hour': 60,
-                '2 hours': 120,
-                '4 hours': 240,
-                '6 hours': 360,
-                '12 hours': 720
-            }
-            interval_minutes = interval_map[sample_interval]
-            
-            try:
-                plot_df_sampled = []
-                for bookmaker in plot_df['BOOKMAKER'].unique():
-                    bookmaker_data = plot_df[plot_df['BOOKMAKER'] == bookmaker].copy()
-                    bookmaker_data = bookmaker_data.sort_values('RECDATE_parsed')
-                    
-                    # Set RECDATE as index for resampling
-                    bookmaker_data.set_index('RECDATE_parsed', inplace=True)
-                    
-                    # Resample to specified interval, taking first record in each period
-                    resampled = bookmaker_data.resample(f'{interval_minutes}min').first().dropna()
-                    
-                    # Reset index to get RECDATE_parsed back as column
-                    resampled.reset_index(inplace=True)
-                    plot_df_sampled.append(resampled)
-                
-                if plot_df_sampled:
-                    plot_df = pd.concat(plot_df_sampled, ignore_index=True)
-                    st.info(f"Data sampled every {sample_interval}. Showing {len(plot_df)} data points (reduced from {len(filtered_df)}).")
-                    
-            except Exception as e:
-                st.warning(f"Sampling failed: {str(e)}. Using original data.")
         
         # Handle PRICES - convert to numeric if possible
         def parse_prices(price_str):
